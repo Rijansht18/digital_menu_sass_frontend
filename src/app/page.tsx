@@ -355,12 +355,12 @@ export default async function LandingPage() {
                 <div className="mb-6">
                   <div className="flex items-baseline gap-1">
                     <span className="font-display text-4xl font-extrabold text-text-primary">
-                      ${plan.price.monthly}
+                      Rs. {plan.price.monthly}
                     </span>
                     <span className="text-text-muted text-sm">/mo</span>
                   </div>
                   <p className="text-xs text-text-muted mt-1">
-                    ${plan.price.yearly}/yr (save {Math.round((1 - plan.price.yearly / (plan.price.monthly * 12)) * 100)}%)
+                    Rs. {plan.price.yearly}/yr (save {Math.round((1 - plan.price.yearly / (plan.price.monthly * 12)) * 100)}%)
                   </p>
                 </div>
 

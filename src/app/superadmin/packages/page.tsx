@@ -77,159 +77,174 @@ function PackageModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface/60 backdrop-blur-sm overflow-y-auto">
-      <div className="glass-card w-full max-w-lg p-6 my-8 animate-scale-in">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="font-display text-xl font-bold text-text-primary flex items-center gap-2">
-            <Package className="w-5 h-5 text-brand-400" />
-            {editItem ? "Edit Package" : "Create Package"}
-          </h3>
-          <button onClick={onClose} className="btn-icon btn-ghost">
-            <X className="w-5 h-5" />
-          </button>
+    <div 
+      className="fixed inset-0 z-50 overflow-y-auto"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="min-h-screen px-4 flex items-center justify-center">
+        {/* Backdrop */}
+        <div className="fixed inset-0 bg-surface/60 backdrop-blur-sm" />
+        
+        {/* Modal */}
+        <div className="relative glass-card w-full max-w-lg p-6 my-8 animate-scale-in">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-display text-xl font-bold text-text-primary flex items-center gap-2">
+              <Package className="w-5 h-5 text-brand-400" />
+              {editItem ? "Edit Package" : "Create Package"}
+            </h3>
+            <button onClick={onClose} className="btn-icon btn-ghost">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit((d) => mutate(d))} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <label className="label">Package Name</label>
+                <input
+                  className={`input ${errors.name ? "input-error" : ""}`}
+                  placeholder="e.g. Pro Plan"
+                  {...register("name")}
+                />
+                {errors.name?.message && (
+                  <p className="error-text">{String(errors.name?.message)}</p>
+                )}
+              </div>
+
+              <div className="col-span-2">
+                <label className="label">Description</label>
+                <textarea
+                  className="input resize-none"
+                  rows={2}
+                  {...register("description")}
+                />
+              </div>
+
+              <div>
+                <label className="label">Monthly Price (Rs.)</label>
+                <input
+                  type="number"
+                  step="1"
+                  onWheel={(e) => e.currentTarget.blur()}
+                  className={`input ${errors.monthlyPrice ? "input-error" : ""}`}
+                  {...register("monthlyPrice", { valueAsNumber: true })}
+                />
+                {errors.monthlyPrice?.message && (
+                  <p className="error-text">
+                    {String(errors.monthlyPrice?.message)}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="label">Yearly Price (Rs.)</label>
+                <input
+                  type="number"
+                  step="1"
+                  onWheel={(e) => e.currentTarget.blur()}
+                  className={`input ${errors.yearlyPrice ? "input-error" : ""}`}
+                  {...register("yearlyPrice", { valueAsNumber: true })}
+                />
+                {errors.yearlyPrice?.message && (
+                  <p className="error-text">
+                    {String(errors.yearlyPrice?.message)}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="label">Max Menu Items</label>
+                <input
+                  type="number"
+                  onWheel={(e) => e.currentTarget.blur()}
+                  className={`input ${errors.maxMenuItems ? "input-error" : ""}`}
+                  {...register("maxMenuItems", { valueAsNumber: true })}
+                />
+                {errors.maxMenuItems?.message && (
+                  <p className="error-text">
+                    {String(errors.maxMenuItems?.message)}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="label">Max Categories</label>
+                <input
+                  type="number"
+                  onWheel={(e) => e.currentTarget.blur()}
+                  className={`input ${errors.maxCategories ? "input-error" : ""}`}
+                  {...register("maxCategories", { valueAsNumber: true })}
+                />
+                {errors.maxCategories?.message && (
+                  <p className="error-text">
+                    {String(errors.maxCategories?.message)}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-surface-elevated border border-surface-border space-y-3 mt-2">
+              <div className="text-xs text-text-muted uppercase tracking-wider mb-2">
+                Features
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="rounded"
+                  {...register("analyticsEnabled")}
+                />
+                <span className="text-sm text-text-secondary">
+                  Analytics Enabled
+                </span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="rounded"
+                  {...register("customTheme")}
+                />
+                <span className="text-sm text-text-secondary">
+                  Custom Theme Support
+                </span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="rounded"
+                  {...register("prioritySupport")}
+                />
+                <span className="text-sm text-text-secondary">
+                  Priority Support
+                </span>
+              </label>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn-secondary flex-1"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isPending}
+                className="btn-primary flex-1"
+              >
+                {isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                ) : editItem ? (
+                  "Update"
+                ) : (
+                  "Create"
+                )}
+              </button>
+            </div>
+          </form>
         </div>
-
-        <form onSubmit={handleSubmit((d) => mutate(d))} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="label">Package Name</label>
-              <input
-                className={`input ${errors.name ? "input-error" : ""}`}
-                placeholder="e.g. Pro Plan"
-                {...register("name")}
-              />
-              {errors.name?.message && (
-                <p className="error-text">{String(errors.name?.message)}</p>
-              )}
-            </div>
-
-            <div className="col-span-2">
-              <label className="label">Description</label>
-              <textarea
-                className="input resize-none"
-                rows={2}
-                {...register("description")}
-              />
-            </div>
-
-            <div>
-              <label className="label">Monthly Price ($)</label>
-              <input
-                type="number"
-                step="0.01"
-                className={`input ${errors.monthlyPrice ? "input-error" : ""}`}
-                {...register("monthlyPrice", { valueAsNumber: true })}
-              />
-              {errors.monthlyPrice?.message && (
-                <p className="error-text">
-                  {String(errors.monthlyPrice?.message)}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="label">Yearly Price ($)</label>
-              <input
-                type="number"
-                step="0.01"
-                className={`input ${errors.yearlyPrice ? "input-error" : ""}`}
-                {...register("yearlyPrice", { valueAsNumber: true })}
-              />
-              {errors.yearlyPrice?.message && (
-                <p className="error-text">
-                  {String(errors.yearlyPrice?.message)}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="label">Max Menu Items</label>
-              <input
-                type="number"
-                className={`input ${errors.maxMenuItems ? "input-error" : ""}`}
-                {...register("maxMenuItems", { valueAsNumber: true })}
-              />
-              {errors.maxMenuItems?.message && (
-                <p className="error-text">
-                  {String(errors.maxMenuItems?.message)}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="label">Max Categories</label>
-              <input
-                type="number"
-                className={`input ${errors.maxCategories ? "input-error" : ""}`}
-                {...register("maxCategories", { valueAsNumber: true })}
-              />
-              {errors.maxCategories?.message && (
-                <p className="error-text">
-                  {String(errors.maxCategories?.message)}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="p-4 rounded-xl bg-surface-elevated border border-surface-border space-y-3 mt-2">
-            <div className="text-xs text-text-muted uppercase tracking-wider mb-2">
-              Features
-            </div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="rounded"
-                {...register("analyticsEnabled")}
-              />
-              <span className="text-sm text-text-secondary">
-                Analytics Enabled
-              </span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="rounded"
-                {...register("customTheme")}
-              />
-              <span className="text-sm text-text-secondary">
-                Custom Theme Support
-              </span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="rounded"
-                {...register("prioritySupport")}
-              />
-              <span className="text-sm text-text-secondary">
-                Priority Support
-              </span>
-            </label>
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-secondary flex-1"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="btn-primary flex-1"
-            >
-              {isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-              ) : editItem ? (
-                "Update"
-              ) : (
-                "Create"
-              )}
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   );
@@ -312,7 +327,7 @@ export default function SuperadminPackagesPage() {
 
                 <div className="flex items-end gap-1 mb-6">
                   <span className="font-display text-3xl font-bold text-gradient">
-                    {formatPrice(pkg.monthlyPrice)}
+                    Rs. {pkg.monthlyPrice}
                   </span>
                   <span className="text-text-muted text-sm mb-1">/mo</span>
                 </div>

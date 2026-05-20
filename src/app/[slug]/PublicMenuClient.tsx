@@ -58,7 +58,7 @@ function MenuItemCard({ item, onClick, viewMode }: { item: MenuItem; onClick: ()
             <h3 className="font-semibold text-text-primary text-sm sm:text-base truncate group-hover:text-brand-400 transition-colors">
               {item.name}
             </h3>
-            <span className="font-bold text-text-primary shrink-0">${Number(item.price).toFixed(2)}</span>
+            <span className="font-bold text-text-primary shrink-0">Rs. {Number(item.price).toFixed(2)}</span>
           </div>
           {item.description && <p className="text-xs text-text-muted line-clamp-1 mb-2">{item.description}</p>}
           <div className="flex flex-wrap gap-1 mt-auto">
@@ -97,7 +97,7 @@ function MenuItemCard({ item, onClick, viewMode }: { item: MenuItem; onClick: ()
           <h3 className="font-semibold text-text-primary text-sm sm:text-base line-clamp-2 group-hover:text-brand-400 transition-colors">
             {item.name}
           </h3>
-          <span className="font-bold text-text-primary shrink-0">${Number(item.price).toFixed(2)}</span>
+          <span className="font-bold text-text-primary shrink-0">Rs. {Number(item.price).toFixed(2)}</span>
         </div>
         {item.description && <p className="text-xs text-text-muted line-clamp-2 mt-1">{item.description}</p>}
         
