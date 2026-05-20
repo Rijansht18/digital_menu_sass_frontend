@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import api from "@/lib/axios";
 import { Plus, Pencil, Trash2, Loader2, X } from "lucide-react";
+import { slugify } from "@/lib/utils";
 import { ImageUpload } from "@/components/ImageUpload";
 
 const categorySchema = z.object({
