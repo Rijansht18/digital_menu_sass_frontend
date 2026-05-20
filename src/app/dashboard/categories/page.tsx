@@ -18,10 +18,23 @@ const categorySchema = z.object({
 type CategoryForm = z.infer<typeof categorySchema>;
 
 function CategoryModal({
-  open, onClose, editItem,
-}: { open: boolean; onClose: () => void; editItem?: any }) {
+  open,
+  onClose,
+  editItem,
+}: {
+  open: boolean;
+  onClose: () => void;
+  editItem?: any;
+}) {
   const qc = useQueryClient();
-  const { register, control, handleSubmit, reset, formState: { errors } } = useForm<CategoryForm>({
+  const {
+    register,
+    control,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<CategoryForm>({
     resolver: zodResolver(categorySchema),
     defaultValues: editItem || { isActive: true, sortOrder: 0 },
   });
@@ -33,6 +46,14 @@ function CategoryModal({
       reset({ isActive: true, sortOrder: 0 });
     }
   }, [editItem, reset]);
+
+  const { data: restaurant } = useQuery({
+    queryKey: ["restaurant-profile"],
+    queryFn: async () => {
+      const res = await api.get("/restaurant/profile");
+      return res.data.data;
+    },
+  });
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (data: CategoryForm) => {
@@ -55,41 +76,92 @@ function CategoryModal({
           <h3 className="font-display text-xl font-bold text-text-primary">
             {editItem ? "Edit Category" : "Add Category"}
           </h3>
-          <button onClick={onClose} className="btn-icon btn-ghost"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="btn-icon btn-ghost">
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit((d) => mutate(d))} id="category-form" className="space-y-4">
+        <form
+          onSubmit={handleSubmit((d) => mutate(d))}
+          id="category-form"
+          className="space-y-4"
+        >
           <div>
             <label className="label">Category Name</label>
-            <input className={`input ${errors.name ? "input-error" : ""}`} placeholder="e.g. Main Course" {...register("name")} />
+            <input
+              className={`input ${errors.name ? "input-error" : ""}`}
+              placeholder="e.g. Main Course"
+              {...register("name")}
+            />
             {errors.name && <p className="error-text">{errors.name.message}</p>}
           </div>
           <div>
             <Controller
               control={control}
               name="image"
-              render={({ field }) => (
-                <ImageUpload
-                  label="Image (optional)"
-                  value={field.value || ""}
-                  onChange={field.onChange}
-                />
-              )}
+              render={({ field }) => {
+                const categoryName = watch("name") || editItem?.name || "";
+                const categorySlug = categoryName
+                  ? slugify(categoryName)
+                  : undefined;
+                const restaurantSlug = restaurant?.name
+                  ? slugify(restaurant.name)
+                  : undefined;
+                const folder = restaurantSlug
+                  ? `restaurants/${restaurantSlug}/categories/${categorySlug || "uncategorized"}`
+                  : undefined;
+                return (
+                  <ImageUpload
+                    label="Image (optional)"
+                    value={field.value || ""}
+                    onChange={field.onChange}
+                    folderPath={folder}
+                    category={categorySlug}
+                    tags={["category"]}
+                  />
+                );
+              }}
             />
           </div>
           <div>
             <label className="label">Sort Order</label>
-            <input type="number" className="input" defaultValue={0} {...register("sortOrder", { valueAsNumber: true })} />
+            <input
+              type="number"
+              className="input"
+              defaultValue={0}
+              {...register("sortOrder", { valueAsNumber: true })}
+            />
           </div>
           <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" className="rounded" {...register("isActive")} />
+            <input
+              type="checkbox"
+              className="rounded"
+              {...register("isActive")}
+            />
             <span className="text-sm text-text-secondary">Active</span>
           </label>
 
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancel</button>
-            <button type="submit" id="category-submit" disabled={isPending} className="btn-primary flex-1">
-              {isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (editItem ? "Update" : "Add Category")}
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-secondary flex-1"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              id="category-submit"
+              disabled={isPending}
+              className="btn-primary flex-1"
+            >
+              {isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+              ) : editItem ? (
+                "Update"
+              ) : (
+                "Add Category"
+              )}
             </button>
           </div>
         </form>
@@ -120,64 +192,87 @@ export default function CategoriesPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-display text-2xl font-bold text-text-primary">Categories</h2>
-          <p className="text-text-muted text-sm mt-0.5">{categories.length} categories</p>
+          <h2 className="font-display text-2xl font-bold text-text-primary">
+            Categories
+          </h2>
+          <p className="text-text-muted text-sm mt-0.5">
+            {categories.length} categories
+          </p>
         </div>
-        <button id="add-category-btn" onClick={() => setModalOpen(true)} className="btn-primary">
+        <button
+          id="add-category-btn"
+          onClick={() => setModalOpen(true)}
+          className="btn-primary"
+        >
           <Plus className="w-4 h-4" /> Add Category
         </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {isLoading
-          ? Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="skeleton h-28 rounded-2xl" />
-            ))
-          : categories.length === 0
-          ? (
-            <div className="glass-card col-span-full p-12 text-center text-text-muted">
-              No categories yet. Add your first!
-            </div>
-          )
-          : categories.map((cat: any) => (
-              <div key={cat.id} className="glass-card-hover p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-brand flex items-center justify-center text-white font-bold">
-                      {cat.name.charAt(0)}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-text-primary">{cat.name}</h3>
-                      <p className="text-xs text-text-muted">{cat._count?.items ?? 0} items</p>
-                    </div>
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="skeleton h-28 rounded-2xl" />
+          ))
+        ) : categories.length === 0 ? (
+          <div className="glass-card col-span-full p-12 text-center text-text-muted">
+            No categories yet. Add your first!
+          </div>
+        ) : (
+          categories.map((cat: any) => (
+            <div key={cat.id} className="glass-card-hover p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-brand flex items-center justify-center text-white font-bold">
+                    {cat.name.charAt(0)}
                   </div>
-                  <span className={`badge ${cat.isActive ? "badge-success" : "badge-danger"}`}>
-                    {cat.isActive ? "Active" : "Hidden"}
-                  </span>
+                  <div>
+                    <h3 className="font-semibold text-text-primary">
+                      {cat.name}
+                    </h3>
+                    <p className="text-xs text-text-muted">
+                      {cat._count?.items ?? 0} items
+                    </p>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => { setEditItem(cat); setModalOpen(true); }}
-                    id={`edit-cat-${cat.id}`}
-                    className="btn-ghost btn-sm flex items-center gap-1.5"
-                  >
-                    <Pencil className="w-3.5 h-3.5" /> Edit
-                  </button>
-                  <button
-                    onClick={() => { if (confirm(`Delete "${cat.name}"?`)) deleteCategory(cat.id); }}
-                    id={`delete-cat-${cat.id}`}
-                    className="btn-danger btn-sm flex items-center gap-1.5"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" /> Delete
-                  </button>
-                </div>
+                <span
+                  className={`badge ${cat.isActive ? "badge-success" : "badge-danger"}`}
+                >
+                  {cat.isActive ? "Active" : "Hidden"}
+                </span>
               </div>
-            ))}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setEditItem(cat);
+                    setModalOpen(true);
+                  }}
+                  id={`edit-cat-${cat.id}`}
+                  className="btn-ghost btn-sm flex items-center gap-1.5"
+                >
+                  <Pencil className="w-3.5 h-3.5" /> Edit
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm(`Delete "${cat.name}"?`))
+                      deleteCategory(cat.id);
+                  }}
+                  id={`delete-cat-${cat.id}`}
+                  className="btn-danger btn-sm flex items-center gap-1.5"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       <CategoryModal
         open={modalOpen}
-        onClose={() => { setModalOpen(false); setEditItem(null); }}
+        onClose={() => {
+          setModalOpen(false);
+          setEditItem(null);
+        }}
         editItem={editItem}
       />
     </div>

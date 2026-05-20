@@ -8,6 +8,7 @@ import api from "@/lib/axios";
 import { Loader2, Save } from "lucide-react";
 import { useState } from "react";
 import { ImageUpload } from "@/components/ImageUpload";
+import { slugify } from "@/lib/utils";
 
 const settingsSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -32,7 +33,12 @@ export default function SettingsPage() {
     },
   });
 
-  const { register, control, handleSubmit, formState: { errors } } = useForm<SettingsForm>({
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SettingsForm>({
     resolver: zodResolver(settingsSchema),
     values: restaurant,
   });
@@ -61,8 +67,12 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6 animate-fade-in max-w-2xl">
       <div>
-        <h2 className="font-display text-2xl font-bold text-text-primary">Restaurant Settings</h2>
-        <p className="text-text-muted text-sm mt-0.5">Update your restaurant information</p>
+        <h2 className="font-display text-2xl font-bold text-text-primary">
+          Restaurant Settings
+        </h2>
+        <p className="text-text-muted text-sm mt-0.5">
+          Update your restaurant information
+        </p>
       </div>
 
       {saved && (
@@ -71,16 +81,27 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit((d) => mutate(d))} id="settings-form" className="glass-card p-6 space-y-5">
+      <form
+        onSubmit={handleSubmit((d) => mutate(d))}
+        id="settings-form"
+        className="glass-card p-6 space-y-5"
+      >
         <div>
           <label className="label">Restaurant Name</label>
-          <input className={`input ${errors.name ? "input-error" : ""}`} {...register("name")} />
+          <input
+            className={`input ${errors.name ? "input-error" : ""}`}
+            {...register("name")}
+          />
           {errors.name && <p className="error-text">{errors.name.message}</p>}
         </div>
 
         <div>
           <label className="label">Description</label>
-          <textarea className="input resize-none" rows={3} {...register("description")} />
+          <textarea
+            className="input resize-none"
+            rows={3}
+            {...register("description")}
+          />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -90,8 +111,14 @@ export default function SettingsPage() {
           </div>
           <div>
             <label className="label">Email</label>
-            <input type="email" className={`input ${errors.email ? "input-error" : ""}`} {...register("email")} />
-            {errors.email && <p className="error-text">{errors.email.message}</p>}
+            <input
+              type="email"
+              className={`input ${errors.email ? "input-error" : ""}`}
+              {...register("email")}
+            />
+            {errors.email && (
+              <p className="error-text">{errors.email.message}</p>
+            )}
           </div>
         </div>
 
@@ -109,6 +136,12 @@ export default function SettingsPage() {
                 label="Logo"
                 value={field.value || ""}
                 onChange={field.onChange}
+                folderPath={
+                  restaurant
+                    ? `restaurants/${slugify(restaurant.name)}/settings`
+                    : undefined
+                }
+                tags={["logo"]}
               />
             )}
           />
@@ -120,16 +153,31 @@ export default function SettingsPage() {
                 label="Banner"
                 value={field.value || ""}
                 onChange={field.onChange}
+                folderPath={
+                  restaurant
+                    ? `restaurants/${slugify(restaurant.name)}/settings`
+                    : undefined
+                }
+                tags={["banner"]}
               />
             )}
           />
         </div>
 
-        <button type="submit" id="settings-save-btn" disabled={isPending} className="btn-primary">
+        <button
+          type="submit"
+          id="settings-save-btn"
+          disabled={isPending}
+          className="btn-primary"
+        >
           {isPending ? (
-            <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" /> Saving...
+            </>
           ) : (
-            <><Save className="w-4 h-4" /> Save Settings</>
+            <>
+              <Save className="w-4 h-4" /> Save Settings
+            </>
           )}
         </button>
       </form>

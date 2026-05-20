@@ -17,7 +17,7 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, slugify } from "@/lib/utils";
 import { ImageUpload } from "@/components/ImageUpload";
 
 const menuItemSchema = z.object({
@@ -50,6 +50,7 @@ function ItemModal({
     control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<MenuItemForm>({
     resolver: zodResolver(menuItemSchema),
@@ -74,11 +75,24 @@ function ItemModal({
     }
   }, [editItem, reset]);
 
+  const { data: restaurant } = useQuery({
+    queryKey: ["restaurant-profile"],
+    queryFn: async () => {
+      const res = await api.get("/restaurant/profile");
+      return res.data.data;
+    },
+  });
+
   const { mutate, isPending } = useMutation({
     mutationFn: async (data: MenuItemForm) => {
       const payload = {
         ...data,
-        tags: data.tags ? data.tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
+        tags: data.tags
+          ? data.tags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)
+          : [],
       };
       if (editItem) {
         const res = await api.put(`/menu-items/${editItem.id}`, payload);
@@ -108,75 +122,157 @@ function ItemModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit((d) => mutate(d))} id="menu-item-form" className="space-y-4">
+        <form
+          onSubmit={handleSubmit((d) => mutate(d))}
+          id="menu-item-form"
+          className="space-y-4"
+        >
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="label">Item Name</label>
-              <input className={`input ${errors.name ? "input-error" : ""}`} placeholder="e.g. Butter Chicken" {...register("name")} />
-              {errors.name && <p className="error-text">{errors.name.message}</p>}
+              <input
+                className={`input ${errors.name ? "input-error" : ""}`}
+                placeholder="e.g. Butter Chicken"
+                {...register("name")}
+              />
+              {errors.name && (
+                <p className="error-text">{errors.name.message}</p>
+              )}
             </div>
 
             <div>
               <label className="label">Category</label>
-              <select className={`input ${errors.categoryId ? "input-error" : ""}`} {...register("categoryId")}>
+              <select
+                className={`input ${errors.categoryId ? "input-error" : ""}`}
+                {...register("categoryId")}
+              >
                 <option value="">Select category</option>
                 {categories.map((c: any) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
                 ))}
               </select>
-              {errors.categoryId && <p className="error-text">{errors.categoryId.message}</p>}
+              {errors.categoryId && (
+                <p className="error-text">{errors.categoryId.message}</p>
+              )}
             </div>
 
             <div>
               <label className="label">Price ($)</label>
-              <input type="number" step="0.01" className={`input ${errors.price ? "input-error" : ""}`} placeholder="0.00" {...register("price", { valueAsNumber: true })} />
-              {errors.price && <p className="error-text">{errors.price.message}</p>}
+              <input
+                type="number"
+                step="0.01"
+                className={`input ${errors.price ? "input-error" : ""}`}
+                placeholder="0.00"
+                {...register("price", { valueAsNumber: true })}
+              />
+              {errors.price && (
+                <p className="error-text">{errors.price.message}</p>
+              )}
             </div>
 
             <div className="col-span-2">
               <label className="label">Description (optional)</label>
-              <textarea className="input resize-none" rows={2} placeholder="Describe this dish..." {...register("description")} />
+              <textarea
+                className="input resize-none"
+                rows={2}
+                placeholder="Describe this dish..."
+                {...register("description")}
+              />
             </div>
 
             <div className="col-span-2">
               <Controller
                 control={control}
                 name="image"
-                render={({ field }) => (
-                  <ImageUpload
-                    label="Image (optional)"
-                    value={field.value || ""}
-                    onChange={field.onChange}
-                  />
-                )}
+                render={({ field }) => {
+                  const categoryId = watch("categoryId");
+                  const categoryObj = categories.find(
+                    (c: any) => c.id === categoryId,
+                  );
+                  const categorySlug =
+                    categoryObj?.slug ??
+                    (categoryObj?.name ? slugify(categoryObj.name) : undefined);
+                  const restaurantSlug = restaurant?.name
+                    ? slugify(restaurant.name)
+                    : undefined;
+                  const folder = restaurantSlug
+                    ? `restaurants/${restaurantSlug}/menu-items/${categorySlug || "uncategorized"}`
+                    : undefined;
+
+                  return (
+                    <ImageUpload
+                      label="Image (optional)"
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                      folderPath={folder}
+                      category={categorySlug}
+                      tags={["menu-item"]}
+                    />
+                  );
+                }}
               />
             </div>
 
             <div className="col-span-2">
               <label className="label">Tags (comma separated)</label>
-              <input className="input" placeholder="spicy, popular, new" {...register("tags")} />
+              <input
+                className="input"
+                placeholder="spicy, popular, new"
+                {...register("tags")}
+              />
             </div>
           </div>
 
           <div className="flex gap-6">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" className="rounded" {...register("isVeg")} />
+              <input
+                type="checkbox"
+                className="rounded"
+                {...register("isVeg")}
+              />
               <span className="text-sm text-text-secondary">Vegetarian</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" className="rounded" {...register("isSpicy")} />
+              <input
+                type="checkbox"
+                className="rounded"
+                {...register("isSpicy")}
+              />
               <span className="text-sm text-text-secondary">Spicy</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" className="rounded" {...register("isFeatured")} />
+              <input
+                type="checkbox"
+                className="rounded"
+                {...register("isFeatured")}
+              />
               <span className="text-sm text-text-secondary">Featured</span>
             </label>
           </div>
 
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancel</button>
-            <button type="submit" id="menu-item-submit" disabled={isPending} className="btn-primary flex-1">
-              {isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (editItem ? "Update Item" : "Add Item")}
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-secondary flex-1"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              id="menu-item-submit"
+              disabled={isPending}
+              className="btn-primary flex-1"
+            >
+              {isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+              ) : editItem ? (
+                "Update Item"
+              ) : (
+                "Add Item"
+              )}
             </button>
           </div>
         </form>
@@ -196,6 +292,14 @@ export default function MenuPage() {
     queryKey: ["categories"],
     queryFn: async () => {
       const res = await api.get("/categories");
+      return res.data.data;
+    },
+  });
+
+  const { data: restaurant } = useQuery({
+    queryKey: ["restaurant-profile"],
+    queryFn: async () => {
+      const res = await api.get("/restaurant/profile");
       return res.data.data;
     },
   });
@@ -242,8 +346,12 @@ export default function MenuPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="font-display text-2xl font-bold text-text-primary">Menu Items</h2>
-          <p className="text-text-muted text-sm mt-0.5">{items.length} items in your menu</p>
+          <h2 className="font-display text-2xl font-bold text-text-primary">
+            Menu Items
+          </h2>
+          <p className="text-text-muted text-sm mt-0.5">
+            {items.length} items in your menu
+          </p>
         </div>
         <button
           id="add-menu-item-btn"
@@ -276,7 +384,9 @@ export default function MenuPage() {
         >
           <option value="">All Categories</option>
           {categories.map((c: any) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
           ))}
         </select>
       </div>
@@ -298,7 +408,9 @@ export default function MenuPage() {
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i}>
                   {Array.from({ length: 5 }).map((_, j) => (
-                    <td key={j}><div className="skeleton h-5 w-full" /></td>
+                    <td key={j}>
+                      <div className="skeleton h-5 w-full" />
+                    </td>
                   ))}
                 </tr>
               ))
@@ -315,40 +427,66 @@ export default function MenuPage() {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl overflow-hidden bg-surface-elevated shrink-0">
                         {item.image ? (
-                          <Image src={item.image} alt={item.name} width={40} height={40} className="object-cover" />
+                          <Image
+                            src={item.image}
+                            alt={item.name}
+                            width={40}
+                            height={40}
+                            className="object-cover"
+                          />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-lg">🍽️</div>
+                          <div className="w-full h-full flex items-center justify-center text-lg">
+                            🍽️
+                          </div>
                         )}
                       </div>
                       <div>
-                        <div className="font-medium text-text-primary text-sm">{item.name}</div>
+                        <div className="font-medium text-text-primary text-sm">
+                          {item.name}
+                        </div>
                         <div className="flex gap-1 mt-0.5">
                           {item.isVeg !== undefined && (
-                            <span className={`badge text-xs ${item.isVeg ? "badge-veg" : "badge-nonveg"}`}>
+                            <span
+                              className={`badge text-xs ${item.isVeg ? "badge-veg" : "badge-nonveg"}`}
+                            >
                               {item.isVeg ? "🟢" : "🔴"}
                             </span>
                           )}
-                          {item.isFeatured && <span className="badge badge-warning text-xs">⭐</span>}
+                          {item.isFeatured && (
+                            <span className="badge badge-warning text-xs">
+                              ⭐
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
                   </td>
                   <td>
-                    <span className="badge-brand">{item.category?.name || "–"}</span>
+                    <span className="badge-brand">
+                      {item.category?.name || "–"}
+                    </span>
                   </td>
-                  <td className="font-semibold text-text-primary">{formatPrice(item.price)}</td>
+                  <td className="font-semibold text-text-primary">
+                    {formatPrice(item.price)}
+                  </td>
                   <td>
                     <button
                       onClick={() => toggleAvailability(item.id)}
                       className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${
-                        item.isAvailable ? "text-success hover:text-success/70" : "text-text-muted hover:text-text-secondary"
+                        item.isAvailable
+                          ? "text-success hover:text-success/70"
+                          : "text-text-muted hover:text-text-secondary"
                       }`}
                       aria-label={`Toggle availability for ${item.name}`}
                     >
                       {item.isAvailable ? (
-                        <><ToggleRight className="w-5 h-5" /> Available</>
+                        <>
+                          <ToggleRight className="w-5 h-5" /> Available
+                        </>
                       ) : (
-                        <><ToggleLeft className="w-5 h-5" /> Unavailable</>
+                        <>
+                          <ToggleLeft className="w-5 h-5" /> Unavailable
+                        </>
                       )}
                     </button>
                   </td>
@@ -364,7 +502,8 @@ export default function MenuPage() {
                       </button>
                       <button
                         onClick={() => {
-                          if (confirm(`Delete "${item.name}"?`)) deleteItem(item.id);
+                          if (confirm(`Delete "${item.name}"?`))
+                            deleteItem(item.id);
                         }}
                         id={`delete-item-${item.id}`}
                         className="btn-icon btn-danger btn-sm"
