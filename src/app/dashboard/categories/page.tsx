@@ -37,14 +37,29 @@ function CategoryModal({
     formState: { errors },
   } = useForm<CategoryForm>({
     resolver: zodResolver(categorySchema),
-    defaultValues: editItem || { isActive: true, sortOrder: 0 },
+    defaultValues: {
+      name: "",
+      image: "",
+      sortOrder: 0,
+      isActive: true,
+    },
   });
 
   useEffect(() => {
     if (editItem) {
-      reset(editItem);
+      reset({
+        name: editItem.name,
+        image: editItem.image || "",
+        sortOrder: editItem.sortOrder || 0,
+        isActive: editItem.isActive ?? true,
+      });
     } else {
-      reset({ isActive: true, sortOrder: 0 });
+      reset({
+        name: "",
+        image: "",
+        sortOrder: 0,
+        isActive: true,
+      });
     }
   }, [editItem, reset]);
 
@@ -58,13 +73,21 @@ function CategoryModal({
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (data: CategoryForm) => {
-      if (editItem) return api.put(`/categories/${editItem.id}`, data);
-      return api.post("/categories", data);
+      if (editItem) {
+        const res = await api.put(`/categories/${editItem.id}`, data);
+        return res.data;
+      }
+      const res = await api.post("/categories", data);
+      return res.data;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["categories"] });
+      qc.invalidateQueries({ queryKey: ["menu-items"] });
       reset();
       onClose();
+    },
+    onError: (error) => {
+      console.error("Error saving category:", error);
     },
   });
 
@@ -72,14 +95,11 @@ function CategoryModal({
 
   return (
     <div className="fixed inset-0 z-50">
-      {/* Backdrop */}
       <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm" onClick={onClose} />
       
-      {/* Dialog */}
       <div className="fixed inset-0 overflow-y-auto">
         <div className="flex min-h-full items-center justify-center p-4">
           <div className="relative w-full max-w-md bg-white dark:bg-surface rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
-            {/* Header */}
             <div className="flex items-center justify-between p-6 pb-4 border-b border-gray-200 dark:border-surface-border">
               <h3 className="font-display text-xl font-bold text-gray-900 dark:text-text-primary">
                 {editItem ? "Edit Category" : "Add Category"}
@@ -92,7 +112,6 @@ function CategoryModal({
               </button>
             </div>
 
-            {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-6">
               <form
                 onSubmit={handleSubmit((d) => mutate(d))}
@@ -154,7 +173,6 @@ function CategoryModal({
                     type="number"
                     onWheel={(e) => e.currentTarget.blur()}
                     className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-surface-border bg-white dark:bg-surface-elevated text-gray-900 dark:text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-brand-400 transition-all"
-                    defaultValue={0}
                     {...register("sortOrder", { valueAsNumber: true })}
                   />
                 </div>
@@ -172,7 +190,6 @@ function CategoryModal({
               </form>
             </div>
 
-            {/* Footer */}
             <div className="flex gap-3 p-6 pt-4 border-t border-gray-200 dark:border-surface-border bg-gray-50 dark:bg-surface/80 rounded-b-2xl">
               <button
                 type="button"
@@ -218,8 +235,21 @@ export default function CategoriesPage() {
 
   const { mutate: deleteCategory } = useMutation({
     mutationFn: async (id: string) => api.delete(`/categories/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["categories"] });
+      qc.invalidateQueries({ queryKey: ["menu-items"] });
+    },
   });
+
+  const handleEdit = (cat: any) => {
+    setEditItem(cat);
+    setModalOpen(true);
+  };
+
+  const handleClose = () => {
+    setModalOpen(false);
+    setEditItem(null);
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -277,17 +307,18 @@ export default function CategoriesPage() {
                   </div>
                 </div>
                 <span
-                  className={`badge ${cat.isActive ? "badge-success" : "badge-danger"}`}
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    cat.isActive 
+                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" 
+                      : "bg-gray-100 text-gray-600 dark:bg-gray-800/30 dark:text-gray-400"
+                  }`}
                 >
                   {cat.isActive ? "Active" : "Hidden"}
                 </span>
               </div>
               <div className="flex gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-surface-border">
                 <button
-                  onClick={() => {
-                    setEditItem(cat);
-                    setModalOpen(true);
-                  }}
+                  onClick={() => handleEdit(cat)}
                   id={`edit-cat-${cat.id}`}
                   className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-surface-elevated dark:text-text-secondary dark:hover:bg-surface-card"
                 >
@@ -311,10 +342,7 @@ export default function CategoriesPage() {
 
       <CategoryModal
         open={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setEditItem(null);
-        }}
+        onClose={handleClose}
         editItem={editItem}
       />
     </div>

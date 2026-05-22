@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,6 +15,8 @@ import {
   ToggleLeft,
   ToggleRight,
   X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import Image from "next/image";
 import { formatPrice, slugify } from "@/lib/utils";
@@ -54,24 +56,44 @@ function ItemModal({
     formState: { errors },
   } = useForm<MenuItemForm>({
     resolver: zodResolver(menuItemSchema),
-    defaultValues: editItem
-      ? {
-          ...editItem,
-          tags: editItem.tags?.join(", "),
-          price: Number(editItem.price),
-        }
-      : { isFeatured: false },
+    defaultValues: {
+      name: "",
+      categoryId: "",
+      description: "",
+      price: 0,
+      image: "",
+      isVeg: false,
+      isSpicy: false,
+      isFeatured: false,
+      tags: "",
+    },
   });
 
   useEffect(() => {
     if (editItem) {
       reset({
-        ...editItem,
-        tags: editItem.tags?.join(", "),
+        name: editItem.name,
+        categoryId: editItem.categoryId,
+        description: editItem.description || "",
         price: Number(editItem.price),
+        image: editItem.image || "",
+        isVeg: editItem.isVeg || false,
+        isSpicy: editItem.isSpicy || false,
+        isFeatured: editItem.isFeatured || false,
+        tags: editItem.tags?.join(", ") || "",
       });
     } else {
-      reset({ isFeatured: false });
+      reset({
+        name: "",
+        categoryId: "",
+        description: "",
+        price: 0,
+        image: "",
+        isVeg: false,
+        isSpicy: false,
+        isFeatured: false,
+        tags: "",
+      });
     }
   }, [editItem, reset]);
 
@@ -103,8 +125,12 @@ function ItemModal({
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["menu-items"] });
+      qc.invalidateQueries({ queryKey: ["categories"] });
       reset();
       onClose();
+    },
+    onError: (error) => {
+      console.error("Error saving menu item:", error);
     },
   });
 
@@ -112,14 +138,11 @@ function ItemModal({
 
   return (
     <div className="fixed inset-0 z-50">
-      {/* Backdrop */}
       <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm" onClick={onClose} />
       
-      {/* Dialog */}
       <div className="fixed inset-0 overflow-y-auto">
         <div className="flex min-h-full items-center justify-center p-4">
           <div className="relative w-full max-w-lg bg-white dark:bg-surface rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
-            {/* Header */}
             <div className="flex items-center justify-between p-6 pb-4 border-b border-gray-200 dark:border-surface-border">
               <h3 className="font-display text-xl font-bold text-gray-900 dark:text-text-primary">
                 {editItem ? "Edit Menu Item" : "Add Menu Item"}
@@ -132,7 +155,6 @@ function ItemModal({
               </button>
             </div>
 
-            {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-6">
               <form
                 onSubmit={handleSubmit((d) => mutate(d))}
@@ -289,7 +311,6 @@ function ItemModal({
               </form>
             </div>
 
-            {/* Footer */}
             <div className="flex gap-3 p-6 pt-4 border-t border-gray-200 dark:border-surface-border bg-gray-50 dark:bg-surface/80 rounded-b-2xl">
               <button
                 type="button"
@@ -320,11 +341,81 @@ function ItemModal({
   );
 }
 
-// Helper function to format price safely
 const formatPriceSafe = (price: any): string => {
   const num = typeof price === 'number' ? price : parseFloat(price);
   return isNaN(num) ? '0.00' : num.toFixed(2);
 };
+
+// Pagination Component
+function Pagination({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) {
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) pages.push(i);
+        pages.push('...');
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push('...');
+        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push('...');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+        pages.push('...');
+        pages.push(totalPages);
+      }
+    }
+    return pages;
+  };
+
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-surface-elevated dark:text-text-secondary dark:hover:bg-surface-card"
+      >
+        <ChevronLeft className="w-4 h-4" />
+        Previous
+      </button>
+      
+      <div className="flex items-center gap-1">
+        {getPageNumbers().map((page, index) => (
+          page === '...' ? (
+            <span key={index} className="px-2 py-1 text-sm text-gray-500 dark:text-text-muted">...</span>
+          ) : (
+            <button
+              key={index}
+              onClick={() => onPageChange(page as number)}
+              className={`w-8 h-8 rounded-lg text-sm font-medium transition-all duration-200 ${
+                currentPage === page
+                  ? 'bg-brand-600 text-white dark:bg-brand-500'
+                  : 'text-gray-700 hover:bg-gray-100 dark:text-text-secondary dark:hover:bg-surface-card'
+              }`}
+            >
+              {page}
+            </button>
+          )
+        ))}
+      </div>
+      
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-surface-elevated dark:text-text-secondary dark:hover:bg-surface-card"
+      >
+        Next
+        <ChevronRight className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
 
 export default function MenuPage() {
   const qc = useQueryClient();
@@ -332,6 +423,12 @@ export default function MenuPage() {
   const [editItem, setEditItem] = useState<any>(null);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const limit = 10; // Items per page
+  
+  // Ref to store the scroll position
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const previousScrollPosition = useRef(0);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
@@ -349,10 +446,14 @@ export default function MenuPage() {
     },
   });
 
-  const { data: menuData, isLoading } = useQuery({
-    queryKey: ["menu-items", search, selectedCategory],
+  // API call with pagination parameters
+  const { data: menuData, isLoading, isFetching } = useQuery({
+    queryKey: ["menu-items", search, selectedCategory, currentPage],
     queryFn: async () => {
-      const params: Record<string, string> = {};
+      const params: Record<string, any> = {
+        page: currentPage,
+        limit: limit,
+      };
       if (search) params.search = search;
       if (selectedCategory) params.categoryId = selectedCategory;
       const res = await api.get("/menu-items", { params });
@@ -361,19 +462,30 @@ export default function MenuPage() {
   });
 
   const items = menuData?.items || [];
+  const pagination = menuData?.pagination || { page: currentPage, limit: limit, total: 0, pages: 0 };
+  const totalPages = pagination.pages;
+
+  // Reset to first page when search or category changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, selectedCategory]);
 
   const { mutate: deleteItem } = useMutation({
     mutationFn: async (id: string) => {
       await api.delete(`/menu-items/${id}`);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["menu-items"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["menu-items"] });
+    },
   });
 
   const { mutate: toggleAvailability } = useMutation({
     mutationFn: async (id: string) => {
       await api.patch(`/menu-items/${id}/toggle-availability`);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["menu-items"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["menu-items"] });
+    },
   });
 
   const handleEdit = (item: any) => {
@@ -386,16 +498,32 @@ export default function MenuPage() {
     setEditItem(null);
   };
 
+  const handlePageChange = (page: number) => {
+    // Save current scroll position of the table container
+    if (tableContainerRef.current) {
+      previousScrollPosition.current = tableContainerRef.current.scrollTop;
+    }
+    setCurrentPage(page);
+    // Restore scroll position after state update
+    setTimeout(() => {
+      if (tableContainerRef.current) {
+        tableContainerRef.current.scrollTop = previousScrollPosition.current;
+      }
+    }, 0);
+  };
+
+  const startIndex = (currentPage - 1) * limit + 1;
+  const endIndex = Math.min(currentPage * limit, pagination.total);
+
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="font-display text-2xl font-bold text-gray-900 dark:text-text-primary">
             Menu Items
           </h2>
           <p className="text-gray-500 dark:text-text-muted text-sm mt-0.5">
-            {items.length} items in your menu
+            {pagination.total} items in your menu
           </p>
         </div>
         <button
@@ -408,7 +536,6 @@ export default function MenuPage() {
         </button>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-text-muted" />
@@ -436,10 +563,23 @@ export default function MenuPage() {
         </select>
       </div>
 
-      {/* Items Table */}
-      <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-surface-border bg-white dark:bg-surface shadow-sm">
+      {/* Top Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-between items-center flex-wrap gap-3">
+          <div className="text-sm text-gray-500 dark:text-text-muted">
+            Showing {startIndex} to {endIndex} of {pagination.total} items
+          </div>
+          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+        </div>
+      )}
+
+      {/* Items Table Container with ref for scroll position */}
+      <div 
+        ref={tableContainerRef}
+        className="overflow-x-auto rounded-xl border border-gray-200 dark:border-surface-border bg-white dark:bg-surface shadow-sm"
+      >
         <table className="w-full">
-          <thead className="bg-gray-50 dark:bg-surface-elevated border-b border-gray-200 dark:border-surface-border">
+          <thead className="bg-gray-50 dark:bg-surface-elevated border-b border-gray-200 dark:border-surface-border sticky top-0 z-10">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-text-muted uppercase tracking-wider">Item</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-text-muted uppercase tracking-wider">Category</th>
@@ -449,14 +589,33 @@ export default function MenuPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-surface-border">
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
+            {isLoading || isFetching ? (
+              Array.from({ length: limit }).map((_, i) => (
                 <tr key={i} className="animate-pulse">
-                  {Array.from({ length: 5 }).map((_, j) => (
-                    <td key={j} className="px-6 py-4">
-                      <div className="h-5 bg-gray-200 dark:bg-surface-elevated rounded" />
-                     </td>
-                  ))}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gray-200 dark:bg-surface-elevated rounded-xl" />
+                      <div className="space-y-2">
+                        <div className="h-4 w-32 bg-gray-200 dark:bg-surface-elevated rounded" />
+                        <div className="h-3 w-20 bg-gray-200 dark:bg-surface-elevated rounded" />
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="h-5 w-20 bg-gray-200 dark:bg-surface-elevated rounded-full" />
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="h-5 w-16 bg-gray-200 dark:bg-surface-elevated rounded" />
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="h-6 w-24 bg-gray-200 dark:bg-surface-elevated rounded-lg" />
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2">
+                      <div className="h-8 w-8 bg-gray-200 dark:bg-surface-elevated rounded-lg" />
+                      <div className="h-8 w-8 bg-gray-200 dark:bg-surface-elevated rounded-lg" />
+                    </div>
+                  </td>
                 </tr>
               ))
             ) : items.length === 0 ? (
@@ -523,7 +682,7 @@ export default function MenuPage() {
                       onClick={() => toggleAvailability(item.id)}
                       className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${
                         item.isAvailable
-                          ? "bg-green-50 text-green-700 hover:bg-green-100 dark:bg-green-900 dark:text-green-400 dark:hover:bg-green-900/30"
+                          ? "bg-green-50 text-green-700 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30"
                           : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-surface-elevated dark:text-text-muted dark:hover:bg-surface-card"
                       }`}
                       aria-label={`Toggle availability for ${item.name}`}
@@ -568,6 +727,16 @@ export default function MenuPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Bottom Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-between items-center pt-2 flex-wrap gap-3">
+          <div className="text-sm text-gray-500 dark:text-text-muted">
+            Page {currentPage} of {totalPages}
+          </div>
+          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+        </div>
+      )}
 
       <ItemModal
         open={modalOpen}

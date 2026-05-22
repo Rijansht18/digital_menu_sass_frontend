@@ -118,7 +118,7 @@ function MenuItemCard({ item, onClick, viewMode }: { item: MenuItem; onClick: ()
 
 export function PublicMenuClient({ restaurant, slug }: { restaurant: Restaurant; slug?: string }) {
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
   useEffect(() => {
@@ -168,7 +168,7 @@ export function PublicMenuClient({ restaurant, slug }: { restaurant: Restaurant;
           <div className="p-6">
             <div className="flex items-start justify-between gap-4 mb-3">
               <h3 className="font-display text-2xl font-bold text-text-primary">{selectedItem.name}</h3>
-              <span className="font-bold text-2xl text-brand-400 shrink-0">${Number(selectedItem.price).toFixed(2)}</span>
+              <span className="font-bold text-2xl text-brand-400 shrink-0">Rs. {Number(selectedItem.price).toFixed(2)}</span>
             </div>
             
             <div className="flex flex-wrap gap-2 mb-4">
@@ -347,16 +347,13 @@ export function PublicMenuClient({ restaurant, slug }: { restaurant: Restaurant;
               <section className="mb-10 relative">
                 <div className="absolute -inset-4 bg-gradient-to-br from-brand-900/20 to-transparent rounded-3xl -z-10" />
                 <div className="flex items-center gap-2 mb-4 pt-2">
-                  <div className="w-8 h-8 rounded-lg bg-warning/20 flex items-center justify-center">
-                    <Star className="w-4 h-4 text-warning fill-warning" />
-                  </div>
                   <h2 className="font-display text-xl font-bold text-text-primary">Chef's Recommendations</h2>
                 </div>
                 
                 {viewMode === "grid" ? (
                   <div className="flex overflow-x-auto gap-4 pb-4 -mx-4 px-4 no-scrollbar snap-x snap-mandatory">
                     {allFeaturedItems.map((item) => (
-                      <div key={item.id} className="w-[280px] shrink-0 snap-center">
+                      <div key={item.id} className="w-[200px] shrink-0 snap-center">
                         <MenuItemCard item={item} onClick={() => setSelectedItem(item)} viewMode="grid" />
                       </div>
                     ))}
@@ -374,11 +371,11 @@ export function PublicMenuClient({ restaurant, slug }: { restaurant: Restaurant;
             {/* List of Categories Grid */}
             <section className="mb-12">
               <h2 className="font-display text-xl font-bold text-text-primary mb-6 flex items-center gap-2">
-                📂 Browse Categories
+                Browse Categories
               </h2>
               
               {viewMode === "grid" ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
                   {restaurant.categories.map((category) => (
                     <Link
                       key={category.id}

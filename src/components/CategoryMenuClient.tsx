@@ -126,7 +126,7 @@ export function CategoryMenuClient({
   backUrl: string;
 }) {
   const [categorySearch, setCategorySearch] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
   // Dynamic Client-side Cache loading for instant zero-server category transition
@@ -286,7 +286,7 @@ export function CategoryMenuClient({
             <div className="p-6">
               <div className="flex items-start justify-between gap-4 mb-3">
                 <h3 className="font-display text-2xl font-bold text-text-primary">{selectedItem.name}</h3>
-                <span className="font-bold text-2xl text-brand-400 shrink-0">${Number(selectedItem.price).toFixed(2)}</span>
+                <span className="font-bold text-2xl text-brand-400 shrink-0">Rs. {Number(selectedItem.price).toFixed(2)}</span>
               </div>
               
               <div className="flex flex-wrap gap-2 mb-4">
