@@ -111,175 +111,220 @@ function ItemModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface/60 backdrop-blur-sm">
-      <div className="glass-card w-full max-w-lg p-6 animate-scale-in">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="font-display text-xl font-bold text-text-primary">
-            {editItem ? "Edit Menu Item" : "Add Menu Item"}
-          </h3>
-          <button onClick={onClose} className="btn-icon btn-ghost">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <form
-          onSubmit={handleSubmit((d) => mutate(d))}
-          id="menu-item-form"
-          className="space-y-4"
-        >
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="label">Item Name</label>
-              <input
-                className={`input ${errors.name ? "input-error" : ""}`}
-                placeholder="e.g. Butter Chicken"
-                {...register("name")}
-              />
-              {errors.name && (
-                <p className="error-text">{errors.name.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="label">Category</label>
-              <select
-                className={`input ${errors.categoryId ? "input-error" : ""}`}
-                {...register("categoryId")}
+    <div className="fixed inset-0 z-50">
+      {/* Backdrop */}
+      <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      
+      {/* Dialog */}
+      <div className="fixed inset-0 overflow-y-auto">
+        <div className="flex min-h-full items-center justify-center p-4">
+          <div className="relative w-full max-w-lg bg-white dark:bg-surface rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 pb-4 border-b border-gray-200 dark:border-surface-border">
+              <h3 className="font-display text-xl font-bold text-gray-900 dark:text-text-primary">
+                {editItem ? "Edit Menu Item" : "Add Menu Item"}
+              </h3>
+              <button 
+                onClick={onClose} 
+                className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:text-text-muted dark:hover:text-text-primary transition-colors"
               >
-                <option value="">Select category</option>
-                {categories.map((c: any) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-              {errors.categoryId && (
-                <p className="error-text">{errors.categoryId.message}</p>
-              )}
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <div>
-              <label className="label">Price ($)</label>
-              <input
-                type="number"
-                step="0.01"
-                className={`input ${errors.price ? "input-error" : ""}`}
-                placeholder="0.00"
-                {...register("price", { valueAsNumber: true })}
-              />
-              {errors.price && (
-                <p className="error-text">{errors.price.message}</p>
-              )}
-            </div>
-
-            <div className="col-span-2">
-              <label className="label">Description (optional)</label>
-              <textarea
-                className="input resize-none"
-                rows={2}
-                placeholder="Describe this dish..."
-                {...register("description")}
-              />
-            </div>
-
-            <div className="col-span-2">
-              <Controller
-                control={control}
-                name="image"
-                render={({ field }) => {
-                  const categoryId = watch("categoryId");
-                  const categoryObj = categories.find(
-                    (c: any) => c.id === categoryId,
-                  );
-                  const categorySlug =
-                    categoryObj?.slug ??
-                    (categoryObj?.name ? slugify(categoryObj.name) : undefined);
-                  const restaurantSlug = restaurant?.name
-                    ? slugify(restaurant.name)
-                    : undefined;
-                  const folder = restaurantSlug
-                    ? `restaurants/${restaurantSlug}/menu-items/${categorySlug || "uncategorized"}`
-                    : undefined;
-
-                  return (
-                    <ImageUpload
-                      label="Image (optional)"
-                      value={field.value || ""}
-                      onChange={field.onChange}
-                      folderPath={folder}
-                      category={categorySlug}
-                      tags={["menu-item"]}
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <form
+                onSubmit={handleSubmit((d) => mutate(d))}
+                id="menu-item-form"
+                className="space-y-4"
+              >
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-text-secondary mb-1">
+                      Item Name
+                    </label>
+                    <input
+                      className={`w-full px-3 py-2 rounded-lg border bg-white dark:bg-surface-elevated text-gray-900 dark:text-text-primary placeholder:text-gray-400 dark:placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-brand-400 transition-all ${
+                        errors.name 
+                          ? "border-red-500 dark:border-red-400" 
+                          : "border-gray-300 dark:border-surface-border"
+                      }`}
+                      placeholder="e.g. Butter Chicken"
+                      {...register("name")}
                     />
-                  );
-                }}
-              />
+                    {errors.name && (
+                      <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.name.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-text-secondary mb-1">
+                      Category
+                    </label>
+                    <select
+                      className={`w-full px-3 py-2 rounded-lg border bg-white dark:bg-surface-elevated text-gray-900 dark:text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-brand-400 transition-all ${
+                        errors.categoryId 
+                          ? "border-red-500 dark:border-red-400" 
+                          : "border-gray-300 dark:border-surface-border"
+                      }`}
+                      {...register("categoryId")}
+                    >
+                      <option value="">Select category</option>
+                      {categories.map((c: any) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.categoryId && (
+                      <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.categoryId.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-text-secondary mb-1">
+                      Price (Rs.)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      onWheel={(e) => e.currentTarget.blur()}
+                      className={`w-full px-3 py-2 rounded-lg border bg-white dark:bg-surface-elevated text-gray-900 dark:text-text-primary placeholder:text-gray-400 dark:placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-brand-400 transition-all ${
+                        errors.price 
+                          ? "border-red-500 dark:border-red-400" 
+                          : "border-gray-300 dark:border-surface-border"
+                      }`}
+                      placeholder="0.00"
+                      {...register("price", { valueAsNumber: true })}
+                    />
+                    {errors.price && (
+                      <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.price.message}</p>
+                    )}
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-text-secondary mb-1">
+                      Description (optional)
+                    </label>
+                    <textarea
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-surface-border bg-white dark:bg-surface-elevated text-gray-900 dark:text-text-primary placeholder:text-gray-400 dark:placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-brand-400 transition-all resize-none"
+                      rows={2}
+                      placeholder="Describe this dish..."
+                      {...register("description")}
+                    />
+                  </div>
+
+                  <div className="col-span-2">
+                    <Controller
+                      control={control}
+                      name="image"
+                      render={({ field }) => {
+                        const categoryId = watch("categoryId");
+                        const categoryObj = categories.find(
+                          (c: any) => c.id === categoryId,
+                        );
+                        const categorySlug =
+                          categoryObj?.slug ??
+                          (categoryObj?.name ? slugify(categoryObj.name) : undefined);
+                        const restaurantSlug = restaurant?.name
+                          ? slugify(restaurant.name)
+                          : undefined;
+                        const folder = restaurantSlug
+                          ? `restaurants/${restaurantSlug}/menu-items/${categorySlug || "uncategorized"}`
+                          : undefined;
+
+                        return (
+                          <ImageUpload
+                            label="Image (optional)"
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                            folderPath={folder}
+                            category={categorySlug}
+                            tags={["menu-item"]}
+                          />
+                        );
+                      }}
+                    />
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-text-secondary mb-1">
+                      Tags (comma separated)
+                    </label>
+                    <input
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-surface-border bg-white dark:bg-surface-elevated text-gray-900 dark:text-text-primary placeholder:text-gray-400 dark:placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-brand-400 transition-all"
+                      placeholder="spicy, popular, new"
+                      {...register("tags")}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-6 p-4 rounded-xl bg-gray-50 dark:bg-surface-elevated/40 border border-gray-200 dark:border-surface-border">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300 dark:border-surface-border text-brand-600 focus:ring-brand-500"
+                      {...register("isVeg")}
+                    />
+                    <span className="text-sm text-gray-700 dark:text-text-secondary">Vegetarian</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300 dark:border-surface-border text-brand-600 focus:ring-brand-500"
+                      {...register("isSpicy")}
+                    />
+                    <span className="text-sm text-gray-700 dark:text-text-secondary">Spicy</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300 dark:border-surface-border text-brand-600 focus:ring-brand-500"
+                      {...register("isFeatured")}
+                    />
+                    <span className="text-sm text-gray-700 dark:text-text-secondary">Featured</span>
+                  </label>
+                </div>
+              </form>
             </div>
 
-            <div className="col-span-2">
-              <label className="label">Tags (comma separated)</label>
-              <input
-                className="input"
-                placeholder="spicy, popular, new"
-                {...register("tags")}
-              />
+            {/* Footer */}
+            <div className="flex gap-3 p-6 pt-4 border-t border-gray-200 dark:border-surface-border bg-gray-50 dark:bg-surface/80 rounded-b-2xl">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-surface-elevated dark:text-text-secondary dark:hover:bg-surface-card"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="menu-item-form"
+                disabled={isPending}
+                className="flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 bg-brand-600 text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                ) : editItem ? (
+                  "Update Item"
+                ) : (
+                  "Add Item"
+                )}
+              </button>
             </div>
           </div>
-
-          <div className="flex gap-6">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="rounded"
-                {...register("isVeg")}
-              />
-              <span className="text-sm text-text-secondary">Vegetarian</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="rounded"
-                {...register("isSpicy")}
-              />
-              <span className="text-sm text-text-secondary">Spicy</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="rounded"
-                {...register("isFeatured")}
-              />
-              <span className="text-sm text-text-secondary">Featured</span>
-            </label>
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-secondary flex-1"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              id="menu-item-submit"
-              disabled={isPending}
-              className="btn-primary flex-1"
-            >
-              {isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-              ) : editItem ? (
-                "Update Item"
-              ) : (
-                "Add Item"
-              )}
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );
 }
+
+// Helper function to format price safely
+const formatPriceSafe = (price: any): string => {
+  const num = typeof price === 'number' ? price : parseFloat(price);
+  return isNaN(num) ? '0.00' : num.toFixed(2);
+};
 
 export default function MenuPage() {
   const qc = useQueryClient();
@@ -346,17 +391,17 @@ export default function MenuPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="font-display text-2xl font-bold text-text-primary">
+          <h2 className="font-display text-2xl font-bold text-gray-900 dark:text-text-primary">
             Menu Items
           </h2>
-          <p className="text-text-muted text-sm mt-0.5">
+          <p className="text-gray-500 dark:text-text-muted text-sm mt-0.5">
             {items.length} items in your menu
           </p>
         </div>
         <button
           id="add-menu-item-btn"
           onClick={() => setModalOpen(true)}
-          className="btn-primary"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 bg-brand-600 text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600 shadow-sm"
         >
           <Plus className="w-4 h-4" />
           Add Item
@@ -366,19 +411,19 @@ export default function MenuPage() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-text-muted" />
           <input
             id="menu-search"
             type="search"
             placeholder="Search items..."
-            className="input pl-10"
+            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-surface-border bg-white dark:bg-surface-elevated text-gray-900 dark:text-text-primary placeholder:text-gray-400 dark:placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-brand-400 transition-all"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <select
           id="category-filter"
-          className="input sm:w-52"
+          className="px-4 py-2 rounded-lg border border-gray-300 dark:border-surface-border bg-white dark:bg-surface-elevated text-gray-900 dark:text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-brand-400 transition-all sm:w-52"
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
         >
@@ -392,110 +437,114 @@ export default function MenuPage() {
       </div>
 
       {/* Items Table */}
-      <div className="table-wrapper">
-        <table className="table">
-          <thead>
+      <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-surface-border bg-white dark:bg-surface shadow-sm">
+        <table className="w-full">
+          <thead className="bg-gray-50 dark:bg-surface-elevated border-b border-gray-200 dark:border-surface-border">
             <tr>
-              <th>Item</th>
-              <th>Category</th>
-              <th>Price</th>
-              <th>Status</th>
-              <th>Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-text-muted uppercase tracking-wider">Item</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-text-muted uppercase tracking-wider">Category</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-text-muted uppercase tracking-wider">Price</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-text-muted uppercase tracking-wider">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-text-muted uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-gray-200 dark:divide-surface-border">
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i}>
+                <tr key={i} className="animate-pulse">
                   {Array.from({ length: 5 }).map((_, j) => (
-                    <td key={j}>
-                      <div className="skeleton h-5 w-full" />
-                    </td>
+                    <td key={j} className="px-6 py-4">
+                      <div className="h-5 bg-gray-200 dark:bg-surface-elevated rounded" />
+                     </td>
                   ))}
                 </tr>
               ))
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={5} className="text-center py-12 text-text-muted">
+                <td colSpan={5} className="px-6 py-12 text-center text-gray-500 dark:text-text-muted">
                   No menu items found. Add your first item!
                 </td>
               </tr>
             ) : (
               items.map((item: any) => (
-                <tr key={item.id}>
-                  <td>
+                <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-surface-elevated/50 transition-colors">
+                  <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl overflow-hidden bg-surface-elevated shrink-0">
+                      <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-100 dark:bg-surface-elevated shrink-0">
                         {item.image ? (
                           <Image
                             src={item.image}
                             alt={item.name}
                             width={40}
                             height={40}
-                            className="object-cover"
+                            className="object-cover w-full h-full"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-lg">
+                          <div className="w-full h-full flex items-center justify-center text-xl">
                             🍽️
                           </div>
                         )}
                       </div>
                       <div>
-                        <div className="font-medium text-text-primary text-sm">
+                        <div className="font-medium text-gray-900 dark:text-text-primary">
                           {item.name}
                         </div>
-                        <div className="flex gap-1 mt-0.5">
+                        <div className="flex gap-1 mt-1">
                           {item.isVeg !== undefined && (
                             <span
-                              className={`badge text-xs ${item.isVeg ? "badge-veg" : "badge-nonveg"}`}
+                              className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                                item.isVeg 
+                                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" 
+                                  : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                              }`}
                             >
-                              {item.isVeg ? "🟢" : "🔴"}
+                              {item.isVeg ? "Veg" : "Non-Veg"}
                             </span>
                           )}
                           {item.isFeatured && (
-                            <span className="badge badge-warning text-xs">
-                              ⭐
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                              Featured
                             </span>
                           )}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td>
-                    <span className="badge-brand">
+                  <td className="px-6 py-4">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400">
                       {item.category?.name || "–"}
                     </span>
                   </td>
-                  <td className="font-semibold text-text-primary">
-                    {formatPrice(item.price)}
+                  <td className="px-6 py-4 font-semibold text-gray-900 dark:text-text-primary">
+                    Rs. {formatPriceSafe(item.price)}
                   </td>
-                  <td>
+                  <td className="px-6 py-4">
                     <button
                       onClick={() => toggleAvailability(item.id)}
-                      className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${
+                      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${
                         item.isAvailable
-                          ? "text-success hover:text-success/70"
-                          : "text-text-muted hover:text-text-secondary"
+                          ? "bg-green-50 text-green-700 hover:bg-green-100 dark:bg-green-900 dark:text-green-400 dark:hover:bg-green-900/30"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-surface-elevated dark:text-text-muted dark:hover:bg-surface-card"
                       }`}
                       aria-label={`Toggle availability for ${item.name}`}
                     >
                       {item.isAvailable ? (
                         <>
-                          <ToggleRight className="w-5 h-5" /> Available
+                          <ToggleRight className="w-4 h-4" /> Available
                         </>
                       ) : (
                         <>
-                          <ToggleLeft className="w-5 h-5" /> Unavailable
+                          <ToggleLeft className="w-4 h-4" /> Unavailable
                         </>
                       )}
                     </button>
                   </td>
-                  <td>
+                  <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleEdit(item)}
                         id={`edit-item-${item.id}`}
-                        className="btn-icon btn-ghost btn-sm"
+                        className="p-1.5 rounded-lg text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:text-text-muted dark:hover:text-brand-400 dark:hover:bg-brand-900/20 transition-all duration-200"
                         aria-label={`Edit ${item.name}`}
                       >
                         <Pencil className="w-4 h-4" />
@@ -506,7 +555,7 @@ export default function MenuPage() {
                             deleteItem(item.id);
                         }}
                         id={`delete-item-${item.id}`}
-                        className="btn-icon btn-danger btn-sm"
+                        className="p-1.5 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 dark:text-text-muted dark:hover:text-red-400 dark:hover:bg-red-900/20 transition-all duration-200"
                         aria-label={`Delete ${item.name}`}
                       >
                         <Trash2 className="w-4 h-4" />

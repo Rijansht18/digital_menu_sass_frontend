@@ -50,7 +50,7 @@ export default function AnalyticsPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         {[
-          { label: "Total Views", value: data?.totalViews ?? "–", icon: Eye, color: "text-brand-400", bg: "bg-brand-900/40" },
+          { label: "Total Views", value: data?.totalViews ?? "–", icon: Eye, color: "text-brand-400", bg: "bg-brand-400/40" },
           { label: "Menu Version", value: data?.featureLimits?.limits ? "Active" : "–", icon: TrendingUp, color: "text-success", bg: "bg-success/10" },
           { label: "Top Items", value: data?.topItems?.length ?? "–", icon: BarChart3, color: "text-accent-orange", bg: "bg-accent-orange/10" },
         ].map((stat) => {

@@ -23,33 +23,37 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { cn } from "@/lib/utils";
 
-const navItems = [
+// Define nav items without analytics - will be conditionally added
+const baseNavItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/dashboard/menu", icon: UtensilsCrossed, label: "Menu Items" },
   { href: "/dashboard/categories", icon: FolderOpen, label: "Categories" },
-  { href: "/dashboard/analytics", icon: BarChart3, label: "Analytics" },
   { href: "/dashboard/subscription", icon: CreditCard, label: "Subscription" },
   { href: "/dashboard/settings", icon: Settings, label: "Settings" },
 ];
 
+const analyticsNavItem = { href: "/dashboard/analytics", icon: BarChart3, label: "Analytics" };
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, clearAuth } = useAuthStore();
-  const { sidebarOpen, toggleSidebar } = useUIStore();
+  const { sidebarOpen, toggleSidebar, setSidebarOpen  } = useUIStore();
   const router = useRouter();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
+   useEffect(() => {
     setMounted(true);
-  }, []);
-
+    // Set sidebar to closed by default on mount
+    setSidebarOpen(false);
+  }, [setSidebarOpen]);
+  
   useEffect(() => {
     if (mounted && !isAuthenticated) {
       router.push("/login");
     }
   }, [mounted, isAuthenticated, router]);
 
-  const { data: restaurant } = useQuery({
+  const { data: restaurant, isLoading: isLoadingRestaurant } = useQuery({
     queryKey: ["restaurant-profile"],
     queryFn: async () => {
       const res = await api.get("/restaurant/profile");
@@ -57,6 +61,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     },
     enabled: !!isAuthenticated && !!user?.restaurantId,
   });
+
+  // Get the package features from the restaurant subscription
+  const packageFeatures = restaurant?.subscription?.package;
+  const hasAnalytics = packageFeatures?.analyticsEnabled === true;
+
+  // Build nav items based on package features
+  const navItems = hasAnalytics 
+    ? [...baseNavItems.slice(0, 3), analyticsNavItem, ...baseNavItems.slice(3)]
+    : baseNavItems;
+
+  // Redirect if trying to access analytics but not allowed
+  useEffect(() => {
+    if (mounted && !isLoadingRestaurant && !hasAnalytics && pathname === "/dashboard/analytics") {
+      router.push("/dashboard");
+    }
+  }, [mounted, isLoadingRestaurant, hasAnalytics, pathname, router]);
 
   const { mutate: logout } = useMutation({
     mutationFn: async () => {
@@ -71,21 +91,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!mounted || !isAuthenticated || !user) return null;
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen bg-gray-50 dark:bg-surface">
       {/* ─── Sidebar ────────────────────────────────────────────────────────── */}
       <aside
         className={cn(
-          "fixed left-0 top-0 h-full bg-surface-elevated border-r border-surface-border transition-all duration-300 z-40 flex flex-col",
+          "fixed left-0 top-0 h-full bg-white dark:bg-surface-elevated border-r border-gray-200 dark:border-surface-border transition-all duration-300 z-40 flex flex-col shadow-sm dark:shadow-none",
           sidebarOpen ? "w-60" : "w-16"
         )}
       >
         {/* Logo */}
-        <div className="flex items-center gap-2.5 px-4 h-16 border-b border-surface-border">
-          <div className="relative w-8 h-8 rounded-xl overflow-hidden bg-surface-elevated shrink-0">
+        <div className="flex items-center gap-2.5 px-4 h-16 border-b border-gray-200 dark:border-surface-border">
+          <div className="relative w-8 h-8 rounded-xl overflow-hidden bg-gray-100 dark:bg-surface-elevated shrink-0">
             <img src="/menulogo.png" alt="RestroSphere logo" className="object-cover w-full h-full" />
           </div>
           {sidebarOpen && (
-            <span className="font-display text-lg font-bold text-gradient">RestroSphere</span>
+            <span className="font-display text-lg font-bold bg-gradient-to-r from-brand-600 to-brand-800 dark:text-gradient bg-clip-text text-transparent">
+              RestroSphere
+            </span>
           )}
         </div>
 
@@ -102,8 +124,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                   isActive
-                    ? "bg-brand-900/60 text-brand-300 border border-brand-700/30"
-                    : "text-text-secondary hover:bg-surface-card hover:text-text-primary",
+                    ? "bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-400 border border-brand-200 dark:border-brand-500/20"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-text-secondary dark:hover:bg-surface-card dark:hover:text-text-primary",
                   !sidebarOpen && "justify-center"
                 )}
                 title={!sidebarOpen ? item.label : undefined}
@@ -122,7 +144,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               href={`/${restaurant.slug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-xs text-text-muted hover:text-brand-400 transition-colors px-3 py-2 rounded-xl hover:bg-surface-card"
+              className="flex items-center gap-2 text-xs text-gray-500 hover:text-brand-600 dark:text-text-muted dark:hover:text-brand-400 transition-colors px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-surface-card"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               View Public Menu
@@ -130,16 +152,43 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         )}
 
+        {/* Package Info Badge (optional) */}
+        {sidebarOpen && packageFeatures && (
+          <div className="px-3 py-2 mx-3 mb-2 rounded-lg bg-gray-50 dark:bg-surface-card border border-gray-200 dark:border-surface-border">
+            <div className="text-xs text-gray-500 dark:text-text-muted mb-1">Current Plan</div>
+            <div className="text-sm font-semibold text-gray-900 dark:text-text-primary">
+              {packageFeatures.name}
+            </div>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {packageFeatures.analyticsEnabled && (
+                <span className="inline-block px-1.5 py-0.5 text-[10px] font-medium bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400 rounded">
+                  Analytics
+                </span>
+              )}
+              {packageFeatures.customTheme && (
+                <span className="inline-block px-1.5 py-0.5 text-[10px] font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded">
+                  Custom Theme
+                </span>
+              )}
+              {packageFeatures.prioritySupport && (
+                <span className="inline-block px-1.5 py-0.5 text-[10px] font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded">
+                  Priority Support
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* User + Logout */}
-        <div className="border-t border-surface-border p-3">
+        <div className="border-t border-gray-200 dark:border-surface-border p-3">
           {sidebarOpen && (
             <div className="flex items-center gap-3 px-3 py-2 mb-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-brand flex items-center justify-center text-white text-xs font-bold shrink-0">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-brand-500 to-brand-700 flex items-center justify-center text-white text-xs font-bold shrink-0">
                 {user.name.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0">
-                <div className="text-sm font-medium text-text-primary truncate">{user.name}</div>
-                <div className="text-xs text-text-muted truncate">{user.email}</div>
+                <div className="text-sm font-medium text-gray-900 dark:text-text-primary truncate">{user.name}</div>
+                <div className="text-xs text-gray-500 dark:text-text-muted truncate">{user.email}</div>
               </div>
             </div>
           )}
@@ -147,8 +196,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             onClick={() => logout()}
             id="logout-btn"
             className={cn(
-              "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-text-muted hover:text-danger hover:bg-danger/10 transition-all duration-200",
-              !sidebarOpen && "justify-center"
+              "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+              !sidebarOpen && "justify-center",
+              "text-gray-600 hover:text-red-600 hover:bg-red-50 dark:text-text-muted dark:hover:text-red-400 dark:hover:bg-red-900/10"
             )}
           >
             <LogOut size={18} className="shrink-0" />
@@ -160,7 +210,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <button
           onClick={toggleSidebar}
           id="sidebar-toggle"
-          className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-surface-card border border-surface-border flex items-center justify-center text-text-muted hover:text-text-primary hover:border-brand-600/50 transition-all duration-200 shadow-card"
+          className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-white dark:bg-surface-card border border-gray-200 dark:border-surface-border flex items-center justify-center text-gray-500 hover:text-brand-600 dark:text-text-muted dark:hover:text-brand-400 hover:border-brand-300 dark:hover:border-brand-600/50 transition-all duration-200 shadow-md dark:shadow-card"
         >
           {sidebarOpen ? <ChevronLeft className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         </button>
@@ -174,15 +224,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
       >
         {/* Top bar */}
-        <header className="sticky top-0 z-30 h-16 border-b border-surface-border bg-surface/80 backdrop-blur-xl flex items-center justify-between px-6">
+        <header className="sticky top-0 z-30 h-16 border-b border-gray-200 dark:border-surface-border bg-white/80 dark:bg-surface/80 backdrop-blur-xl flex items-center justify-between px-6">
           <div>
-            <h1 className="font-display font-bold text-text-primary">
+            <h1 className="font-display font-bold text-gray-900 dark:text-text-primary">
               {navItems.find((n) => n.href === pathname)?.label || "Dashboard"}
             </h1>
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <div className="badge-brand">{user.role === "SUPER_ADMIN" ? "Super Admin" : "Admin"}</div>
+            <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400 border border-brand-200 dark:border-brand-800/30">
+              {user.role === "SUPER_ADMIN" ? "Super Admin" : "Admin"}
+            </div>
           </div>
         </header>
 

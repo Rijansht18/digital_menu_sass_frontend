@@ -71,101 +71,133 @@ function CategoryModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface/60 backdrop-blur-sm">
-      <div className="glass-card w-full max-w-md p-6 animate-scale-in">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="font-display text-xl font-bold text-text-primary">
-            {editItem ? "Edit Category" : "Add Category"}
-          </h3>
-          <button onClick={onClose} className="btn-icon btn-ghost">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <div className="fixed inset-0 z-50">
+      {/* Backdrop */}
+      <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      
+      {/* Dialog */}
+      <div className="fixed inset-0 overflow-y-auto">
+        <div className="flex min-h-full items-center justify-center p-4">
+          <div className="relative w-full max-w-md bg-white dark:bg-surface rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 pb-4 border-b border-gray-200 dark:border-surface-border">
+              <h3 className="font-display text-xl font-bold text-gray-900 dark:text-text-primary">
+                {editItem ? "Edit Category" : "Add Category"}
+              </h3>
+              <button 
+                onClick={onClose} 
+                className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:text-text-muted dark:hover:text-text-primary transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-        <form
-          onSubmit={handleSubmit((d) => mutate(d))}
-          id="category-form"
-          className="space-y-4"
-        >
-          <div>
-            <label className="label">Category Name</label>
-            <input
-              className={`input ${errors.name ? "input-error" : ""}`}
-              placeholder="e.g. Main Course"
-              {...register("name")}
-            />
-            {errors.name && <p className="error-text">{errors.name.message}</p>}
-          </div>
-          <div>
-            <Controller
-              control={control}
-              name="image"
-              render={({ field }) => {
-                const categoryName = watch("name") || editItem?.name || "";
-                const categorySlug = categoryName
-                  ? slugify(categoryName)
-                  : undefined;
-                const restaurantSlug = restaurant?.name
-                  ? slugify(restaurant.name)
-                  : undefined;
-                const folder = restaurantSlug
-                  ? `restaurants/${restaurantSlug}/categories/${categorySlug || "uncategorized"}`
-                  : undefined;
-                return (
-                  <ImageUpload
-                    label="Image (optional)"
-                    value={field.value || ""}
-                    onChange={field.onChange}
-                    folderPath={folder}
-                    category={categorySlug}
-                    tags={["category"]}
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <form
+                onSubmit={handleSubmit((d) => mutate(d))}
+                id="category-form"
+                className="space-y-4"
+              >
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-text-secondary mb-1">
+                    Category Name
+                  </label>
+                  <input
+                    className={`w-full px-3 py-2 rounded-lg border bg-white dark:bg-surface-elevated text-gray-900 dark:text-text-primary placeholder:text-gray-400 dark:placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-brand-400 transition-all ${
+                      errors.name 
+                        ? "border-red-500 dark:border-red-400" 
+                        : "border-gray-300 dark:border-surface-border"
+                    }`}
+                    placeholder="e.g. Main Course"
+                    {...register("name")}
                   />
-                );
-              }}
-            />
-          </div>
-          <div>
-            <label className="label">Sort Order</label>
-            <input
-              type="number"
-              className="input"
-              defaultValue={0}
-              {...register("sortOrder", { valueAsNumber: true })}
-            />
-          </div>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              className="rounded"
-              {...register("isActive")}
-            />
-            <span className="text-sm text-text-secondary">Active</span>
-          </label>
+                  {errors.name && (
+                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.name.message}</p>
+                  )}
+                </div>
 
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-secondary flex-1"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              id="category-submit"
-              disabled={isPending}
-              className="btn-primary flex-1"
-            >
-              {isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-              ) : editItem ? (
-                "Update"
-              ) : (
-                "Add Category"
-              )}
-            </button>
+                <div>
+                  <Controller
+                    control={control}
+                    name="image"
+                    render={({ field }) => {
+                      const categoryName = watch("name") || editItem?.name || "";
+                      const categorySlug = categoryName
+                        ? slugify(categoryName)
+                        : undefined;
+                      const restaurantSlug = restaurant?.name
+                        ? slugify(restaurant.name)
+                        : undefined;
+                      const folder = restaurantSlug
+                        ? `restaurants/${restaurantSlug}/categories/${categorySlug || "uncategorized"}`
+                        : undefined;
+                      return (
+                        <ImageUpload
+                          label="Image (optional)"
+                          value={field.value || ""}
+                          onChange={field.onChange}
+                          folderPath={folder}
+                          category={categorySlug}
+                          tags={["category"]}
+                        />
+                      );
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-text-secondary mb-1">
+                    Sort Order
+                  </label>
+                  <input
+                    type="number"
+                    onWheel={(e) => e.currentTarget.blur()}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-surface-border bg-white dark:bg-surface-elevated text-gray-900 dark:text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-brand-400 transition-all"
+                    defaultValue={0}
+                    {...register("sortOrder", { valueAsNumber: true })}
+                  />
+                </div>
+
+                <div className="p-4 rounded-xl bg-gray-50 dark:bg-surface-elevated/40 border border-gray-200 dark:border-surface-border">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300 dark:border-surface-border text-brand-600 focus:ring-brand-500"
+                      {...register("isActive")}
+                    />
+                    <span className="text-sm text-gray-700 dark:text-text-secondary">Active</span>
+                  </label>
+                </div>
+              </form>
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 p-6 pt-4 border-t border-gray-200 dark:border-surface-border bg-gray-50 dark:bg-surface/80 rounded-b-2xl">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-surface-elevated dark:text-text-secondary dark:hover:bg-surface-card"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="category-form"
+                disabled={isPending}
+                className="flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 bg-brand-600 text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                ) : editItem ? (
+                  "Update"
+                ) : (
+                  "Add Category"
+                )}
+              </button>
+            </div>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
@@ -191,19 +223,19 @@ export default function CategoriesPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="font-display text-2xl font-bold text-text-primary">
+          <h2 className="font-display text-2xl font-bold text-gray-900 dark:text-text-primary">
             Categories
           </h2>
-          <p className="text-text-muted text-sm mt-0.5">
+          <p className="text-gray-500 dark:text-text-muted text-sm mt-0.5">
             {categories.length} categories
           </p>
         </div>
         <button
           id="add-category-btn"
           onClick={() => setModalOpen(true)}
-          className="btn-primary"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 bg-brand-600 text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600 shadow-sm"
         >
           <Plus className="w-4 h-4" /> Add Category
         </button>
@@ -212,25 +244,34 @@ export default function CategoriesPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="skeleton h-28 rounded-2xl" />
+            <div key={i} className="h-28 rounded-2xl bg-gray-200 dark:bg-surface-elevated animate-pulse" />
           ))
         ) : categories.length === 0 ? (
-          <div className="glass-card col-span-full p-12 text-center text-text-muted">
+          <div className="col-span-full text-center py-12 text-gray-500 dark:text-text-muted bg-gray-50 dark:bg-surface-elevated/20 rounded-2xl border border-gray-200 dark:border-surface-border">
             No categories yet. Add your first!
           </div>
         ) : (
           categories.map((cat: any) => (
-            <div key={cat.id} className="glass-card-hover p-5">
+            <div 
+              key={cat.id} 
+              className="bg-white dark:bg-surface rounded-2xl border border-gray-200 dark:border-surface-border p-5 hover:shadow-lg transition-all duration-200 hover:border-brand-200 dark:hover:border-brand-800"
+            >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-brand flex items-center justify-center text-white font-bold">
-                    {cat.name.charAt(0)}
-                  </div>
+                  {cat.image ? (
+                    <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-100 dark:bg-surface-elevated">
+                      <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-brand-500 to-brand-700 flex items-center justify-center text-white font-bold text-lg">
+                      {cat.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <div>
-                    <h3 className="font-semibold text-text-primary">
+                    <h3 className="font-semibold text-gray-900 dark:text-text-primary">
                       {cat.name}
                     </h3>
-                    <p className="text-xs text-text-muted">
+                    <p className="text-xs text-gray-500 dark:text-text-muted">
                       {cat._count?.items ?? 0} items
                     </p>
                   </div>
@@ -241,14 +282,14 @@ export default function CategoriesPage() {
                   {cat.isActive ? "Active" : "Hidden"}
                 </span>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-surface-border">
                 <button
                   onClick={() => {
                     setEditItem(cat);
                     setModalOpen(true);
                   }}
                   id={`edit-cat-${cat.id}`}
-                  className="btn-ghost btn-sm flex items-center gap-1.5"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-surface-elevated dark:text-text-secondary dark:hover:bg-surface-card"
                 >
                   <Pencil className="w-3.5 h-3.5" /> Edit
                 </button>
@@ -258,7 +299,7 @@ export default function CategoriesPage() {
                       deleteCategory(cat.id);
                   }}
                   id={`delete-cat-${cat.id}`}
-                  className="btn-danger btn-sm flex items-center gap-1.5"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> Delete
                 </button>
