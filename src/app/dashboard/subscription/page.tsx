@@ -354,12 +354,12 @@ export default function SubscriptionPage() {
                     ].filter(Boolean).map((feature) => (
                       <li key={feature} className="flex items-center gap-2">
                         <Check className={`w-3.5 h-3.5 shrink-0 ${
-                          feature.includes("No") 
+                          feature?.includes("No") 
                             ? "text-gray-400 dark:text-gray-600" 
                             : "text-green-600 dark:text-green-400"
                         }`} />
                         <span className={`text-sm ${
-                          feature.includes("No") 
+                          feature?.includes("No") 
                             ? "text-gray-400 dark:text-gray-600" 
                             : "text-gray-700 dark:text-text-secondary"
                         }`}>
