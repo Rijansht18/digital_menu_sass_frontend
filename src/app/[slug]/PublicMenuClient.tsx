@@ -118,7 +118,7 @@ function MenuItemCard({ item, onClick, viewMode }: { item: MenuItem; onClick: ()
 
 export function PublicMenuClient({ restaurant, slug }: { restaurant: Restaurant; slug?: string }) {
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
   useEffect(() => {

@@ -126,7 +126,7 @@ export function CategoryMenuClient({
   backUrl: string;
 }) {
   const [categorySearch, setCategorySearch] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
   // Dynamic Client-side Cache loading for instant zero-server category transition
